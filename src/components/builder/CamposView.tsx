@@ -8,10 +8,6 @@ import {
   X, 
   List, 
   Plus,
-  Table as TableIcon,
-  Eye,
-  FileCode,
-  Link2,
   CheckSquare,
   Type,
   Calendar,
@@ -113,20 +109,6 @@ export const CamposView = () => {
 
   return (
     <div className="flex flex-col h-full bg-[#e9e9e9]">
-      <div className="h-8 bg-[#f4f4f4] border-b border-slate-300 flex items-center px-4 gap-4 shadow-sm z-10 shrink-0">
-        <button className="flex items-center gap-1 text-[10px] font-bold text-slate-600 hover:text-slate-900 transition-colors">
-           <TableIcon size={12} className="text-[#0056b3]" /> Gerar tabela
-        </button>
-        <button className="flex items-center gap-1 text-[10px] font-bold text-slate-600 hover:text-slate-900 transition-colors">
-           <Eye size={12} className="text-red-500" /> Mostrar campos inativos
-        </button>
-        <button className="flex items-center gap-1 text-[10px] font-bold text-slate-600 hover:text-slate-900 transition-colors">
-           <FileCode size={12} className="text-yellow-600" /> Scripts
-        </button>
-        <button className="flex items-center gap-1 text-[10px] font-bold text-slate-600 hover:text-slate-900 transition-colors">
-           <Link2 size={12} className="text-slate-500" /> Integrações de API
-        </button>
-      </div>
 
       <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
         {(schema.groups || []).map((group) => {

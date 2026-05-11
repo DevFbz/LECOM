@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import LZString from 'lz-string';
 import { useDispatch, useSelector } from 'react-redux';
 import { SidebarRight } from './components/builder/SidebarRight';
 import { CamposView } from './components/builder/CamposView';
@@ -6,10 +7,10 @@ import { AtividadesView } from './components/builder/AtividadesView';
 import { FullscreenPreview } from './components/preview/FullscreenPreview';
 import { FieldPropertiesModal } from './components/builder/FieldPropertiesModal';
 import { 
-  FileText, 
-  Eye, 
-  LayoutGrid,
-  ListTodo
+  ListTodo,
+  Download,
+  Upload,
+  Share2
 } from 'lucide-react';
 import type { RootState } from './store';
 import { cn } from './utils/lib';
@@ -19,7 +20,8 @@ import {
   updateField, 
   removeField,
   updateGroup,
-  removeGroup
+  removeGroup,
+  setSchema
 } from './store/slices/formSlice';
 
 type Tab = 'Propriedades' | 'Diagrama' | 'Atividades' | 'Campos' | 'Regras' | 'Publicar';
@@ -28,6 +30,7 @@ function App() {
   const dispatch = useDispatch();
   const { schema, selectedFieldId, selectedGroupId } = useSelector((state: RootState) => state.form);
   const [activeTab, setActiveTab] = useState<Tab>('Campos');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Check if we are in preview mode (new tab)
   const isFullscreenPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
@@ -69,8 +72,72 @@ function App() {
   ];
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const encodedData = params.get('data');
+    if (encodedData) {
+      try {
+        const jsonStr = LZString.decompressFromEncodedURIComponent(encodedData);
+        if (jsonStr) {
+          const parsed = JSON.parse(jsonStr);
+          if (parsed && parsed.steps) {
+            dispatch(setSchema(parsed));
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing schema from URL');
+      }
+    }
+  }, [dispatch]);
+
+  useEffect(() => {
     localStorage.setItem('lecom_preview_schema', JSON.stringify(schema));
   }, [schema]);
+
+  const handleExportSchema = () => {
+    const jsonString = JSON.stringify(schema, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `form-schema-${new Date().getTime()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleImportSchema = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const content = e.target?.result as string;
+          const parsedSchema = JSON.parse(content);
+          if (parsedSchema && parsedSchema.steps) {
+            dispatch(setSchema(parsedSchema));
+          } else {
+            alert("O arquivo selecionado não contém um formato válido de formulário.");
+          }
+        } catch (error) {
+          alert("Erro ao importar arquivo. Certifique-se de que é um JSON válido.");
+        }
+      };
+      reader.readAsText(file);
+    }
+    if (event.target) event.target.value = ''; // Reset input
+  };
+
+  const handleShareLink = () => {
+    const jsonString = JSON.stringify(schema);
+    const compressed = LZString.compressToEncodedURIComponent(jsonString);
+    const url = `${window.location.origin}${window.location.pathname}?preview=true&data=${compressed}`;
+    
+    navigator.clipboard.writeText(url).then(() => {
+      alert('Link de teste copiado para a área de transferência!');
+    }).catch(() => {
+      prompt('Copie o link abaixo:', url);
+    });
+  };
 
   return (
     <div className="h-screen w-full flex flex-col overflow-hidden bg-[#e9e9e9] font-sans theme-lecom">
@@ -104,6 +171,36 @@ function App() {
             </div>
           );
         })}
+
+        <div className="ml-auto flex items-center gap-2 pr-4">
+           {activeTab === 'Publicar' && (
+             <button 
+               onClick={handleShareLink}
+               className="flex items-center gap-1.5 px-3 py-1.5 bg-[#10b981] hover:bg-[#059669] text-white text-[10px] font-bold uppercase tracking-wider rounded transition-colors mr-2 shadow-sm"
+             >
+               <Share2 size={12} /> Gerar Link de Teste
+             </button>
+           )}
+           <input 
+              type="file" 
+              accept=".json" 
+              ref={fileInputRef} 
+              style={{ display: 'none' }} 
+              onChange={handleImportSchema} 
+           />
+           <button 
+             onClick={() => fileInputRef.current?.click()}
+             className="flex items-center gap-1.5 px-3 py-1.5 bg-[#d8d8d8] hover:bg-[#c8c8c8] text-slate-700 text-[10px] font-bold uppercase tracking-wider rounded transition-colors"
+           >
+             <Upload size={12} /> Importar
+           </button>
+           <button 
+             onClick={handleExportSchema}
+             className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0056b3] hover:bg-[#004494] text-white text-[10px] font-bold uppercase tracking-wider rounded transition-colors"
+           >
+             <Download size={12} /> Exportar
+           </button>
+        </div>
       </nav>
 
       {/* View Content */}

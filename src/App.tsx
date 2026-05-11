@@ -10,7 +10,10 @@ import {
   ListTodo,
   Download,
   Upload,
-  Share2
+  Share2,
+  FileText,
+  Eye,
+  LayoutGrid
 } from 'lucide-react';
 import type { RootState } from './store';
 import { cn } from './utils/lib';

@@ -6,62 +6,57 @@ interface FormState {
   schema: FormSchema;
   activeStepId: string;
   selectedFieldId: string | null;
+  selectedGroupId: string | null;
+  fieldPropertiesModalFieldId: string | null;
 }
 
 const INITIAL_SCHEMA: FormSchema = {
-  id: 'lecom-demo',
-  title: 'Portal de Suprimentos - Solicitação de Compra',
+  id: 'lecom-test',
+  title: 'Teste Automatizado - Formulário Completo',
   groups: [
-    { id: 'group-1', name: 'Dados Cadastrais' },
-    { id: 'group-2', name: 'Endereço de Entrega' },
-    { id: 'group-3', name: 'Itens da Solicitação' }
+    { id: 'g1', name: 'Dados Pessoais' },
+    { id: 'g2', name: 'Endereço e Contato' },
+    { id: 'g3', name: 'Detalhes da Solicitação' },
+    { id: 'g4', name: 'Produtos (Grid de Itens)' }
   ],
   steps: [
     {
       id: 'step-1',
-      title: 'Identificação',
+      title: 'Etapa 1: Início',
       fields: [
-        {
-          id: 'container-1',
-          type: 'group',
-          label: 'Informações Básicas do Solicitante',
-          required: false,
-          disabled: false,
-          visible: true,
-          columnWidth: 12,
-          children: [
-            { id: 'f1', type: 'text', label: 'Nome Completo', technicalName: 'NOME_SOLICITANTE', columnWidth: 8, required: true, disabled: false, visible: true, meta: {} },
-            { id: 'f2', type: 'date', label: 'Data Desejada', technicalName: 'DATA_ENTREGA', columnWidth: 4, required: true, disabled: false, visible: true, meta: {} },
-          ],
-          meta: {}
-        }
+        { id: 'f1', type: 'text', label: 'Nome Completo', technicalName: 'NOME', group: 'g1', columnWidth: 12, required: true, disabled: false, visible: true, meta: {} },
+        { id: 'f2', type: 'text', label: 'CPF', technicalName: 'CPF', group: 'g1', columnWidth: 6, required: true, disabled: false, visible: true, meta: { mask: '999.999.999-99' } },
+        { id: 'f3', type: 'date', label: 'Data Nasc.', technicalName: 'NASC', group: 'g1', columnWidth: 6, required: false, disabled: false, visible: true, meta: {} },
       ]
     },
     {
       id: 'step-2',
-      title: 'Itens do Pedido',
+      title: 'Etapa 2: Contato',
       fields: [
-        {
-          id: 'grid-items',
-          type: 'grid',
-          label: 'Listagem de Produtos e Serviços',
-          required: false,
-          disabled: false,
-          visible: true,
-          columnWidth: 12,
-          children: [
-            { id: 'c1', type: 'text', label: 'SKU / Código', technicalName: 'SKU', columnWidth: 12, required: true, disabled: false, visible: true, meta: {} },
-            { id: 'c2', type: 'text', label: 'Descrição do Item', technicalName: 'DESCRICAO', columnWidth: 12, required: true, disabled: false, visible: true, meta: {} },
-            { id: 'c3', type: 'currency', label: 'Valor Estimado', technicalName: 'VALOR', columnWidth: 12, required: true, disabled: false, visible: true, meta: {} },
-            { id: 'c4', type: 'integer', label: 'Quantidade', technicalName: 'QTD', columnWidth: 12, required: true, disabled: false, visible: true, meta: {} },
-          ],
-          meta: {
-            displayType: 'grid',
-            gridId: 'GRID_SUPRIMENTOS'
-          }
-        },
+        { id: 'f4', type: 'text', label: 'Email', technicalName: 'EMAIL', group: 'g2', columnWidth: 8, required: true, disabled: false, visible: true, meta: {} },
+        { id: 'f5', type: 'text', label: 'Telefone', technicalName: 'TEL', group: 'g2', columnWidth: 4, required: true, disabled: false, visible: true, meta: { mask: '(99) 99999-9999' } },
       ]
-    }
+    },
+    {
+      id: 'step-3',
+      title: 'Etapa 3: Informações Gerais',
+      fields: [
+        { id: 'f6', type: 'textarea', label: 'Motivo da Solicitação', technicalName: 'MOTIVO', group: 'g3', columnWidth: 12, required: true, disabled: false, visible: true, meta: {} },
+      ]
+    },
+    {
+      id: 'step-4',
+      title: 'Etapa 4: Grid de Produtos',
+      fields: [
+        { id: 'c1', type: 'text', label: 'Código do Produto', technicalName: 'CODIGO', group: 'g4', columnWidth: 4, required: true, disabled: false, visible: true, meta: { displayType: 'grid', gridId: 'PRODUTOS_GRID' } },
+        { id: 'c2', type: 'text', label: 'Descrição', technicalName: 'DESC_PROD', group: 'g4', columnWidth: 4, required: true, disabled: false, visible: true, meta: { displayType: 'grid', gridId: 'PRODUTOS_GRID' } },
+        { id: 'c3', type: 'currency', label: 'Preço', technicalName: 'PRECO', group: 'g4', columnWidth: 4, required: true, disabled: false, visible: true, meta: { displayType: 'grid', gridId: 'PRODUTOS_GRID' } },
+      ]
+    },
+    { id: 'step-5', title: 'Etapa 5: Revisão Interna', fields: [] },
+    { id: 'step-6', title: 'Etapa 6: Aprovação Gerencial', fields: [] },
+    { id: 'step-7', title: 'Etapa 7: Orçamento Final', fields: [] },
+    { id: 'step-8', title: 'Etapa 8: Faturamento', fields: [] }
   ]
 };
 
@@ -69,6 +64,8 @@ const initialState: FormState = {
   schema: INITIAL_SCHEMA,
   activeStepId: 'step-1',
   selectedFieldId: null,
+  selectedGroupId: null,
+  fieldPropertiesModalFieldId: null,
 };
 
 const formSlice = createSlice({
@@ -81,18 +78,11 @@ const formSlice = createSlice({
     setActiveStep: (state, action: PayloadAction<string>) => {
       state.activeStepId = action.payload;
       state.selectedFieldId = null;
+      state.selectedGroupId = null;
     },
     addStep: (state, action: PayloadAction<FormStep>) => {
       state.schema.steps.push(action.payload);
       state.activeStepId = action.payload.id;
-    },
-    removeStep: (state, action: PayloadAction<string>) => {
-      if (state.schema.steps.length > 1) {
-        state.schema.steps = state.schema.steps.filter(s => s.id !== action.payload);
-        if (state.activeStepId === action.payload) {
-          state.activeStepId = state.schema.steps[0].id;
-        }
-      }
     },
     updateStep: (state, action: PayloadAction<{ stepId: string; updates: Partial<FormStep> }>) => {
       const step = state.schema.steps.find(s => s.id === action.payload.stepId);
@@ -100,243 +90,187 @@ const formSlice = createSlice({
         Object.assign(step, action.payload.updates);
       }
     },
+    removeStep: (state, action: PayloadAction<string>) => {
+      state.schema.steps = state.schema.steps.filter(s => s.id !== action.payload);
+      if (state.activeStepId === action.payload) {
+        state.activeStepId = state.schema.steps[0]?.id || '';
+      }
+    },
     setSelectedFieldId: (state, action: PayloadAction<string | null>) => {
       state.selectedFieldId = action.payload;
+      if (action.payload) state.selectedGroupId = null;
+    },
+    setSelectedGroupId: (state, action: PayloadAction<string | null>) => {
+        state.selectedGroupId = action.payload;
+        if (action.payload) {
+          state.selectedFieldId = null;
+          state.fieldPropertiesModalFieldId = null;
+        }
+    },
+    setFieldPropertiesModalFieldId: (state, action: PayloadAction<string | null>) => {
+      state.fieldPropertiesModalFieldId = action.payload;
     },
     updateField: (state, action: PayloadAction<{ fieldId: string; updates: Partial<FormField> }>) => {
       const { fieldId, updates } = action.payload;
+      
+      const updateRecursive = (fields: FormField[]) => {
+        for (let i = 0; i < fields.length; i++) {
+          if (fields[i].id === fieldId) {
+            fields[i] = { ...fields[i], ...updates };
+            return true;
+          }
+          if (fields[i].children && updateRecursive(fields[i].children!)) {
+            return true;
+          }
+        }
+        return false;
+      };
+
       for (const step of state.schema.steps) {
-        const updateRecursive = (fields: FormField[]): FormField[] => {
-          return fields.map(f => {
-            if (f.id === fieldId) return { ...f, ...updates };
-            if (f.children) return { ...f, children: updateRecursive(f.children) };
-            return f;
-          });
-        };
-        step.fields = updateRecursive(step.fields);
+        if (updateRecursive(step.fields)) break;
       }
     },
     removeField: (state, action: PayloadAction<string>) => {
       const fieldId = action.payload;
+      
+      const removeRecursive = (fields: FormField[]) => {
+        return fields.filter(f => {
+          if (f.id === fieldId) return false;
+          if (f.children) f.children = removeRecursive(f.children);
+          return true;
+        });
+      };
+
       for (const step of state.schema.steps) {
-        const removeRecursive = (fields: FormField[]): FormField[] => {
-          return fields
-            .filter(f => f.id !== fieldId)
-            .map(f => f.children ? { ...f, children: removeRecursive(f.children) } : f);
-        };
         step.fields = removeRecursive(step.fields);
       }
-      if (state.selectedFieldId === fieldId) state.selectedFieldId = null;
-    },
-    addField: (state, action: PayloadAction<{ field: FormField; overId: string | null }>) => {
-      const { field, overId } = action.payload;
-      const step = state.schema.steps.find(s => s.id === state.activeStepId);
-      if (!step) return;
       
-      if (!overId || overId === 'canvas-droppable') {
-        step.fields.push(field);
-        state.selectedFieldId = field.id;
-        return;
+      if (state.selectedFieldId === fieldId) {
+        state.selectedFieldId = null;
       }
-
-      const insertRecursive = (fields: FormField[]): boolean => {
-        const index = fields.findIndex(f => f.id === overId);
-        if (index !== -1) {
-          fields.splice(index + 1, 0, field);
-          return true;
-        }
-
-        for (const f of fields) {
-          if ((f.type === 'group' || f.type === 'grid') && f.id === overId) {
-            if (!f.children) f.children = [];
-            f.children.push(field);
-            return true;
-          }
-          if (f.children && insertRecursive(f.children)) {
-            return true;
-          }
-        }
-        return false;
-      };
-
-      insertRecursive(step.fields);
-      state.selectedFieldId = field.id;
     },
-    reorderFields: (state, action: PayloadAction<{ activeId: string; overId: string }>) => {
-      const { activeId, overId } = action.payload;
-      if (activeId === overId) return;
-
-      const step = state.schema.steps.find(s => s.id === state.activeStepId);
+    addField: (state, action: PayloadAction<{ stepId: string; field: FormField; parentId?: string }>) => {
+      const { stepId, field, parentId } = action.payload;
+      const step = state.schema.steps.find(s => s.id === stepId);
       if (!step) return;
 
-      let activeField: FormField | null = null;
-      
-      const removeRecursive = (fields: FormField[]): FormField[] => {
-        const index = fields.findIndex(f => f.id === activeId);
-        if (index !== -1) {
-          activeField = fields[index];
-          return fields.filter(f => f.id !== activeId);
-        }
-        return fields.map(f => f.children ? { ...f, children: removeRecursive(f.children) } : f);
-      };
-
-      const newFields = removeRecursive(step.fields);
-      if (!activeField) return;
-
-      const insertRecursive = (fields: FormField[]): boolean => {
-        const index = fields.findIndex(f => f.id === overId);
-        if (index !== -1) {
-          fields.splice(index, 0, activeField!);
-          return true;
-        }
-
-        for (const f of fields) {
-          if ((f.type === 'group' || f.type === 'grid') && f.id === overId) {
-            if (!f.children) f.children = [];
-            f.children.push(activeField!);
-            return true;
+      if (parentId) {
+        const findAndAdd = (fields: FormField[]) => {
+          for (const f of fields) {
+            if (f.id === parentId) {
+              if (!f.children) f.children = [];
+              f.children.push(field);
+              return true;
+            }
+            if (f.children && findAndAdd(f.children)) return true;
           }
-          if (f.children && insertRecursive(f.children)) {
-            return true;
-          }
-        }
-        return false;
-      };
-
-      const fieldsClone = JSON.parse(JSON.stringify(newFields));
-      if (insertRecursive(fieldsClone)) {
-        step.fields = fieldsClone;
+          return false;
+        };
+        findAndAdd(step.fields);
       } else {
-        step.fields = [...newFields, activeField];
+        step.fields.push(field);
       }
     },
-    moveFieldBetweenSteps: (state, action: PayloadAction<{ fieldId: string; targetStepId: string }>) => {
-      const { fieldId, targetStepId } = action.payload;
-      let fieldToMove: FormField | null = null;
+    duplicateField: (state, action: PayloadAction<{ fieldId: string }>) => {
+      const fieldId = action.payload.fieldId;
+      let fieldToDuplicate: FormField | null = null;
+      let stepOfField: FormStep | null = null;
+
+      const findRecursive = (fields: FormField[], step: FormStep) => {
+        for (const f of fields) {
+          if (f.id === fieldId) {
+            fieldToDuplicate = JSON.parse(JSON.stringify(f));
+            stepOfField = step;
+            return true;
+          }
+          if (f.children && findRecursive(f.children, step)) return true;
+        }
+        return false;
+      };
 
       for (const step of state.schema.steps) {
-        const removeRecursive = (fields: FormField[]): FormField[] => {
-          const index = fields.findIndex(f => f.id === fieldId);
-          if (index !== -1) {
-            fieldToMove = fields[index];
-            return fields.filter(f => f.id !== fieldId);
-          }
-          return fields.map(f => f.children ? { ...f, children: removeRecursive(f.children) } : f);
-        };
-        step.fields = removeRecursive(step.fields);
-        if (fieldToMove) break;
+        if (findRecursive(step.fields, step)) break;
       }
 
-      if (fieldToMove) {
-        const targetStep = state.schema.steps.find(s => s.id === targetStepId);
-        if (targetStep) {
-          targetStep.fields.push(fieldToMove);
-          state.activeStepId = targetStepId;
-        }
+      if (fieldToDuplicate && stepOfField) {
+        const newField = { 
+          ...(fieldToDuplicate as FormField), 
+          id: `f-${Date.now()}`,
+          technicalName: `${(fieldToDuplicate as FormField).technicalName}_COPY`
+        };
+        (stepOfField as FormStep).fields.push(newField);
       }
     },
     addGroup: (state, action: PayloadAction<FormGroup>) => {
-      if (!state.schema.groups) state.schema.groups = [];
-      state.schema.groups.push(action.payload);
+        if (!state.schema.groups) state.schema.groups = [];
+        state.schema.groups.push(action.payload);
+        state.selectedGroupId = action.payload.id;
+        state.selectedFieldId = null;
+    },
+    updateGroup: (state, action: PayloadAction<{ id: string; updates: Partial<FormGroup> }>) => {
+        const group = state.schema.groups?.find(g => g.id === action.payload.id);
+        if (group) {
+          Object.assign(group, action.payload.updates);
+        }
     },
     removeGroup: (state, action: PayloadAction<string>) => {
-      if (state.schema.groups) {
-        state.schema.groups = state.schema.groups.filter(g => g.id !== action.payload);
-      }
-    },
-    updateGroup: (state, action: PayloadAction<{ id: string; name: string }>) => {
-      const group = state.schema.groups?.find(g => g.id === action.payload.id);
-      if (group) group.name = action.payload.name;
+        const groupId = action.payload;
+        // 1. Remove the group itself
+        state.schema.groups = state.schema.groups?.filter(g => g.id !== groupId) || [];
+        
+        // 2. Remove all fields associated with this group across all steps
+        for (const step of state.schema.steps) {
+          step.fields = step.fields.filter(f => f.group !== groupId);
+        }
+
+        // 3. Cleanup selections
+        if (state.selectedGroupId === groupId) {
+          state.selectedGroupId = null;
+        }
     },
     moveFieldToIndex: (state, action: PayloadAction<{ fieldId: string; newIndex: number }>) => {
       const { fieldId, newIndex } = action.payload;
       const step = state.schema.steps.find(s => s.id === state.activeStepId);
       if (!step) return;
 
-      let fieldToMove: FormField | null = null;
-      let parentArray: FormField[] | null = null;
-
-      const findAndRemove = (fields: FormField[]): boolean => {
-        const idx = fields.findIndex(f => f.id === fieldId);
-        if (idx !== -1) {
-          fieldToMove = fields.splice(idx, 1)[0];
-          parentArray = fields;
-          return true;
-        }
-        for (const f of fields) {
-          if (f.children && findAndRemove(f.children)) return true;
-        }
-        return false;
-      };
-
-      if (findAndRemove(step.fields) && fieldToMove && parentArray) {
-        const targetIndex = Math.max(0, Math.min(newIndex, parentArray.length));
-        parentArray.splice(targetIndex, 0, fieldToMove);
-      }
-    },
-    moveFieldToContainer: (state, action: PayloadAction<{ fieldId: string; targetContainerId: string | null }>) => {
-      const { fieldId, targetContainerId } = action.payload;
-      const step = state.schema.steps.find(s => s.id === state.activeStepId);
-      if (!step) return;
-
-      let fieldToMove: FormField | null = null;
-
-      const findAndRemove = (fields: FormField[]): boolean => {
-        const idx = fields.findIndex(f => f.id === fieldId);
-        if (idx !== -1) {
-          fieldToMove = fields.splice(idx, 1)[0];
-          return true;
-        }
-        for (const f of fields) {
-          if (f.children && findAndRemove(f.children)) return true;
-        }
-        return false;
-      };
-
-      if (findAndRemove(step.fields) && fieldToMove) {
-        if (!targetContainerId) {
-          step.fields.push(fieldToMove);
-          return;
-        }
-
-        const findAndInsert = (fields: FormField[]): boolean => {
-          for (const f of fields) {
-            if (f.id === targetContainerId) {
-              if (!f.children) f.children = [];
-              f.children.push(fieldToMove!);
-              return true;
-            }
-            if (f.children && findAndInsert(f.children)) return true;
+      let activeField: FormField | null = null;
+      const removeRecursive = (fields: FormField[]): FormField[] => {
+        return fields.filter(f => {
+          if (f.id === fieldId) {
+            activeField = f;
+            return false;
           }
-          return false;
-        };
+          if (f.children) f.children = removeRecursive(f.children);
+          return true;
+        });
+      };
 
-        if (!findAndInsert(step.fields)) {
-          // If not found in step.fields, maybe it's the container itself? No.
-          // Add back to root if target not found
-          step.fields.push(fieldToMove);
-        }
-      }
+      const newFields = removeRecursive(step.fields);
+      if (!activeField) return;
+
+      newFields.splice(newIndex, 0, activeField);
+      step.fields = newFields;
     }
-  },
+  }
 });
 
 export const { 
   setSchema, 
   setActiveStep, 
   addStep, 
-  removeStep, 
   updateStep,
+  removeStep,
   setSelectedFieldId, 
+  setSelectedGroupId,
+  setFieldPropertiesModalFieldId,
   updateField, 
   removeField, 
   addField, 
-  reorderFields,
-  moveFieldBetweenSteps,
+  duplicateField,
   addGroup,
-  removeGroup,
   updateGroup,
-  moveFieldToIndex,
-  moveFieldToContainer
+  removeGroup,
+  moveFieldToIndex
 } = formSlice.actions;
+
 export default formSlice.reducer;

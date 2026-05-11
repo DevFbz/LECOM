@@ -14,7 +14,8 @@ import {
 import type { FormField } from '../../types/form';
 import { SortableField } from './SortableField';
 import { cn } from '../../utils/lib';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import type { RootState } from '../../store';
 import { addField } from '../../store/slices/formSlice';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -27,6 +28,7 @@ interface GridContainerProps {
 
 export const GridContainer = ({ field, isOver, selectedFieldId, setDroppableRef }: GridContainerProps) => {
   const dispatch = useDispatch();
+  const activeStepId = useSelector((state: RootState) => state.form.activeStepId);
   const [tableData, setTableData] = useState<any[]>([]);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
 
@@ -51,10 +53,13 @@ export const GridContainer = ({ field, isOver, selectedFieldId, setDroppableRef 
         type: 'text',
         label: `NOVA COLUNA ${field.children ? field.children.length + 1 : 1}`,
         required: false,
+        disabled: false,
+        visible: true,
         columnWidth: 12,
         meta: {}
       },
-      overId: field.id
+      stepId: activeStepId as string,
+      parentId: field.id
     }));
   };
 

@@ -51,6 +51,11 @@ export interface FormField {
     lineBreak?: string;
     size?: number;
   };
+  stepProperties?: Record<string, {
+    presentation: string;
+    initialization: string;
+    initialValue: string;
+  }>;
 }
 
 export interface FormStep {
@@ -62,6 +67,7 @@ export interface FormStep {
 export interface FormGroup {
   id: string;
   name: string;
+  stepVisibility?: Record<string, boolean>; // stepId -> isHidden
 }
 
 export interface FormSchema {

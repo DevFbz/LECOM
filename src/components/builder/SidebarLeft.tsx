@@ -186,7 +186,7 @@ export const SidebarLeft = () => {
                   <input 
                     type="text" 
                     value={group.name}
-                    onChange={(e) => dispatch(updateGroup({ id: group.id, name: e.target.value }))}
+                    onChange={(e) => dispatch(updateGroup({ id: group.id, updates: { name: e.target.value } }))}
                     className="bg-transparent border-none text-[11px] font-bold text-[var(--text-muted)] focus:text-[var(--text-main)] focus:outline-none w-32 transition-colors"
                   />
                 </div>

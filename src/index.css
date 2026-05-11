@@ -36,6 +36,21 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.theme-lecom {
+  --bg-main: #f4f4f4;
+  --bg-sidebar: #ffffff;
+  --bg-card: #ffffff;
+  --text-main: #333333;
+  --text-muted: #666666;
+  --border-color: #d1d1d1;
+  --glass-bg: #ffffff;
+  --input-bg: #ffffff;
+  --color-lecom-blue: #0056b3;
+  --color-lecom-red: #d9534f;
+  --color-lecom-green: #5cb85c;
+  --lecom-radius: 3px;
+}
+
 .theme-light {
   --bg-main: #ffffff;
   --bg-sidebar: #ffffff;
@@ -145,6 +160,77 @@ body {
     radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.1) 0px, transparent 50%),
     radial-gradient(at 100% 100%, rgba(14, 165, 233, 0.05) 0px, transparent 50%),
     radial-gradient(at 0% 100%, rgba(139, 92, 246, 0.05) 0px, transparent 50%);
+}
+
+/* Lecom Specific Utilities */
+.lecom-input {
+  background-color: #ffffff;
+  border: 1px solid #ced4da;
+  border-radius: 3px;
+  padding: 6px 12px;
+  font-size: 14px;
+  color: #495057;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.lecom-input:focus {
+  border-color: #80bdff;
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.lecom-input-readonly {
+  background-color: #e9ecef;
+  border-color: #ced4da;
+  color: #495057;
+}
+
+.lecom-section-header {
+  color: #0056b3;
+  font-weight: 700;
+  font-size: 1.1rem;
+  padding-bottom: 0.5rem;
+  border-top: 2px solid #0056b3;
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.lecom-button-blue {
+  background-color: #007bff;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s;
+}
+
+.lecom-button-blue:hover {
+  background-color: #0069d9;
+}
+
+.lecom-button-red {
+  background-color: #dc3545;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s;
+}
+
+.lecom-button-red:hover {
+  background-color: #c82333;
 }
 
 .grid > *, .flex > * {

@@ -4,8 +4,7 @@ import {
   Plus, 
   Settings2, 
   Trash2, 
-  ChevronRight,
-  GripHorizontal
+  ChevronRight
 } from 'lucide-react';
 import type { RootState } from '../../store';
 import { 

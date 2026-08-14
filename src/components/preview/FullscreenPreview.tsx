@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { FormSchema, FormField } from '../../types/form';
 import { cn } from '../../utils/lib';
 import { FormRuntime } from '../../utils/formRuntime';
+import { buildLecomGlobals, runFormScript } from '../../lib/lecomApi';
 import { ChevronUp, ChevronDown, Check, Send, Plus, Trash2, X, Search } from 'lucide-react';
 
 export const FullscreenPreview = ({ schema: propSchema }: { schema?: FormSchema }) => {
@@ -19,6 +20,19 @@ export const FullscreenPreview = ({ schema: propSchema }: { schema?: FormSchema 
   
   const runtimeRef = useRef<FormRuntime | null>(null);
 
+  const runScriptForStep = (runtime: FormRuntime, sch: FormSchema, stepId: string) => {
+    if (!sch.script) return;
+    try {
+      const globals = buildLecomGlobals(runtime, sch, {
+        processData: { activityInstanceId: stepId, processId: sch.id, version: 1 },
+        onError: (msg) => console.warn('[Lecom API] Erro de validação:', msg),
+      });
+      runFormScript(sch.script, globals);
+    } catch (err) {
+      console.error("Runtime Script Error:", err);
+    }
+  };
+
   // Update when propSchema changes (Real-time)
   useEffect(() => {
     if (propSchema) {
@@ -28,18 +42,16 @@ export const FullscreenPreview = ({ schema: propSchema }: { schema?: FormSchema 
         setFormState(prev => ({ ...prev, ...newState }));
       });
       runtimeRef.current = runtime;
-
-      if (propSchema.script) {
-        try {
-          const Form = runtime.getProxy();
-          const scriptFunc = new Function('Form', propSchema.script);
-          scriptFunc(Form);
-        } catch (err) {
-          console.error("Runtime Script Error:", err);
-        }
-      }
+      runScriptForStep(runtime, propSchema, propSchema.steps[activeStepIndex]?.id || '1');
     }
   }, [propSchema]);
+
+  // Re-executa o script quando a etapa muda (ProcessData.activityInstanceId)
+  useEffect(() => {
+    if (runtimeRef.current && schema && schema.steps[activeStepIndex]) {
+      runScriptForStep(runtimeRef.current, schema, schema.steps[activeStepIndex].id);
+    }
+  }, [activeStepIndex, schema]);
 
   // Fallback to localStorage if no propSchema
   useEffect(() => {
@@ -53,16 +65,7 @@ export const FullscreenPreview = ({ schema: propSchema }: { schema?: FormSchema 
                 setFormState(prev => ({ ...prev, ...newState }));
             });
             runtimeRef.current = runtime;
-
-            if (parsed.script) {
-                try {
-                    const Form = runtime.getProxy();
-                    const scriptFunc = new Function('Form', parsed.script);
-                    scriptFunc(Form);
-                } catch (err) {
-                    console.error("Runtime Script Error:", err);
-                }
-            }
+            runScriptForStep(runtime, parsed, parsed.steps[activeStepIndex]?.id || '1');
         }
     }
   }, [propSchema]);
@@ -251,6 +254,7 @@ export const FullscreenPreview = ({ schema: propSchema }: { schema?: FormSchema 
                                 formState={formState}
                                 setFormState={setFormState}
                                 activeStepId={currentStep.id}
+                                runtime={runtimeRef.current}
                             />
                         })}
                     </div>
@@ -311,6 +315,7 @@ export const FullscreenPreview = ({ schema: propSchema }: { schema?: FormSchema 
                                     formState={formState}
                                     setFormState={setFormState}
                                     activeStepId={currentStep.id}
+                                    runtime={runtimeRef.current}
                                 />
                             })}
                         </div>
@@ -503,12 +508,14 @@ const RenderFieldInstance = ({
   field, 
   formState, 
   setFormState,
-  activeStepId
+  activeStepId,
+  runtime
 }: { 
   field: FormField; 
   formState: any;
   setFormState: any;
   activeStepId: string;
+  runtime?: FormRuntime | null;
 }) => {
   const stepProps = field.stepProperties?.[activeStepId];
   const presentation = stepProps?.presentation || 'Normal';
@@ -551,6 +558,7 @@ const RenderFieldInstance = ({
                 formState={formState}
                 setFormState={setFormState}
                 activeStepId={activeStepId}
+                runtime={runtime}
               />
             ))}
           </div>
@@ -593,10 +601,16 @@ const RenderFieldInstance = ({
           field={field} 
           value={formState.values[field.id] || ''}
           isDisabled={isDisabled}
-          onChange={(val: any) => setFormState((prev: any) => ({
-            ...prev,
-            values: { ...prev.values, [field.id]: val }
-          }))}
+          onChange={(val: any) => {
+            setFormState((prev: any) => ({
+              ...prev,
+              values: { ...prev.values, [field.id]: val }
+            }));
+            runtime?.triggerFieldEvent(field.id, 'CHANGE', val);
+          }}
+          onBlur={() => {
+            runtime?.triggerFieldEvent(field.id, 'BLUR', formState.values[field.id]);
+          }}
         />
         {field.type === 'select' && (
            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -612,12 +626,14 @@ const FieldInput = ({
   field, 
   value, 
   isDisabled,
-  onChange 
+  onChange,
+  onBlur,
 }: { 
   field: FormField; 
   value: any; 
   isDisabled?: boolean;
   onChange: (val: any) => void;
+  onBlur?: () => void;
 }) => {
   const baseClasses = cn(
     "lecom-input w-full",
@@ -626,13 +642,14 @@ const FieldInput = ({
 
   switch (field.type) {
     case 'textarea':
-      return <textarea value={value} onChange={e => onChange(e.target.value)} rows={3} className={cn(baseClasses, "resize-none")} />;
+      return <textarea value={value} onChange={e => onChange(e.target.value)} onBlur={onBlur} rows={3} className={cn(baseClasses, "resize-none")} />;
     
     case 'select':
       return (
         <select 
           value={value} 
           onChange={e => onChange(e.target.value)} 
+          onBlur={onBlur}
           className={cn(baseClasses, "appearance-none bg-white")}
         >
           <option value="">Selecione</option>
@@ -659,6 +676,7 @@ const FieldInput = ({
                 value={opt.value} 
                 checked={value === opt.value}
                 onChange={() => onChange(opt.value)}
+                onBlur={onBlur}
                 className="hidden"
               />
               <span className="text-sm text-slate-600">{opt.label}</span>
@@ -668,11 +686,11 @@ const FieldInput = ({
       );
 
     case 'date':
-      return <input type="date" value={value} onChange={e => onChange(e.target.value)} className={baseClasses} />;
+      return <input type="date" value={value} onChange={e => onChange(e.target.value)} onBlur={onBlur} className={baseClasses} />;
     
     case 'integer':
     case 'decimal':
-      return <input type="number" value={value} onChange={e => onChange(e.target.value)} className={baseClasses} />;
+      return <input type="number" value={value} onChange={e => onChange(e.target.value)} onBlur={onBlur} className={baseClasses} />;
 
     default:
       return (
@@ -681,6 +699,7 @@ const FieldInput = ({
             type="text" 
             value={value} 
             onChange={e => onChange(e.target.value)} 
+            onBlur={onBlur}
             placeholder={field.placeholder} 
             className={baseClasses} 
           />

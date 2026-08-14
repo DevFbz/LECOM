@@ -1,6 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { FormField, FormSchema, FormStep, FormGroup } from '../../types/form';
+import { ENTRADA_NOVA_INDUSTRIA_SCHEMA } from '../../data/entradaNovaIndustria';
 
 interface FormState {
   schema: FormSchema;
@@ -10,59 +11,11 @@ interface FormState {
   fieldPropertiesModalFieldId: string | null;
 }
 
-const INITIAL_SCHEMA: FormSchema = {
-  id: 'lecom-test',
-  title: 'Teste Automatizado - Formulário Completo',
-  groups: [
-    { id: 'g1', name: 'Dados Pessoais' },
-    { id: 'g2', name: 'Endereço e Contato' },
-    { id: 'g3', name: 'Detalhes da Solicitação' },
-    { id: 'g4', name: 'Produtos (Grid de Itens)' }
-  ],
-  steps: [
-    {
-      id: 'step-1',
-      title: 'Etapa 1: Início',
-      fields: [
-        { id: 'f1', type: 'text', label: 'Nome Completo', technicalName: 'NOME', group: 'g1', columnWidth: 12, required: true, disabled: false, visible: true, meta: {} },
-        { id: 'f2', type: 'text', label: 'CPF', technicalName: 'CPF', group: 'g1', columnWidth: 6, required: true, disabled: false, visible: true, meta: { mask: '999.999.999-99' } },
-        { id: 'f3', type: 'date', label: 'Data Nasc.', technicalName: 'NASC', group: 'g1', columnWidth: 6, required: false, disabled: false, visible: true, meta: {} },
-      ]
-    },
-    {
-      id: 'step-2',
-      title: 'Etapa 2: Contato',
-      fields: [
-        { id: 'f4', type: 'text', label: 'Email', technicalName: 'EMAIL', group: 'g2', columnWidth: 8, required: true, disabled: false, visible: true, meta: {} },
-        { id: 'f5', type: 'text', label: 'Telefone', technicalName: 'TEL', group: 'g2', columnWidth: 4, required: true, disabled: false, visible: true, meta: { mask: '(99) 99999-9999' } },
-      ]
-    },
-    {
-      id: 'step-3',
-      title: 'Etapa 3: Informações Gerais',
-      fields: [
-        { id: 'f6', type: 'textarea', label: 'Motivo da Solicitação', technicalName: 'MOTIVO', group: 'g3', columnWidth: 12, required: true, disabled: false, visible: true, meta: {} },
-      ]
-    },
-    {
-      id: 'step-4',
-      title: 'Etapa 4: Grid de Produtos',
-      fields: [
-        { id: 'c1', type: 'text', label: 'Código do Produto', technicalName: 'CODIGO', group: 'g4', columnWidth: 4, required: true, disabled: false, visible: true, meta: { displayType: 'grid', gridId: 'PRODUTOS_GRID' } },
-        { id: 'c2', type: 'text', label: 'Descrição', technicalName: 'DESC_PROD', group: 'g4', columnWidth: 4, required: true, disabled: false, visible: true, meta: { displayType: 'grid', gridId: 'PRODUTOS_GRID' } },
-        { id: 'c3', type: 'currency', label: 'Preço', technicalName: 'PRECO', group: 'g4', columnWidth: 4, required: true, disabled: false, visible: true, meta: { displayType: 'grid', gridId: 'PRODUTOS_GRID' } },
-      ]
-    },
-    { id: 'step-5', title: 'Etapa 5: Revisão Interna', fields: [] },
-    { id: 'step-6', title: 'Etapa 6: Aprovação Gerencial', fields: [] },
-    { id: 'step-7', title: 'Etapa 7: Orçamento Final', fields: [] },
-    { id: 'step-8', title: 'Etapa 8: Faturamento', fields: [] }
-  ]
-};
+const INITIAL_SCHEMA: FormSchema = ENTRADA_NOVA_INDUSTRIA_SCHEMA;
 
 const initialState: FormState = {
   schema: INITIAL_SCHEMA,
-  activeStepId: 'step-1',
+  activeStepId: '1',
   selectedFieldId: null,
   selectedGroupId: null,
   fieldPropertiesModalFieldId: null,

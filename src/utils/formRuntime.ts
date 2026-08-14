@@ -6,6 +6,7 @@ export class FormRuntime {
   private visibility: Record<string, boolean>;
   private disabled: Record<string, boolean>;
   private labels: Record<string, string>;
+  private required: Record<string, boolean> = {};
   private listeners: Record<string, Function[]>;
   private onStateChange: (state: any) => void;
   private nameToIdMap: Record<string, string> = {};
@@ -70,6 +71,20 @@ export class FormRuntime {
             self.labels[id] = lab || '';
             return self.getProxy().fields(idOrName);
           },
+          readOnly: (ro?: boolean) => {
+            if (ro === undefined) return self.disabled[id];
+            self.disabled[id] = ro === true;
+            return self.getProxy().fields(idOrName);
+          },
+          setVisible: (vis: boolean) => {
+            self.setVisibility(id, vis);
+            return self.getProxy().fields(idOrName);
+          },
+          setRequired: (typeOrRequired: any, required?: any) => {
+            const req = typeof required === 'boolean' ? required : !!typeOrRequired;
+            self.setRequired(id, req);
+            return self.getProxy().fields(idOrName);
+          },
           apply: () => {
             self.onStateChange({
               values: { ...self.values },
@@ -114,5 +129,62 @@ export class FormRuntime {
     if (this.listeners[key]) {
       this.listeners[key].forEach(cb => cb(...args));
     }
+  }
+
+  // ---- Métodos de suporte à API JS do Lecom (usados pelo lecomApi.ts) ----
+
+  public getValue(idOrName: string): any {
+    return this.values[this.resolveId(idOrName)];
+  }
+
+  public getFieldHandle(idOrName: string) {
+    const proxy = this.getProxy();
+    return proxy.fields(idOrName);
+  }
+
+  public setVisibility(idOrName: string, vis: boolean) {
+    this.visibility[this.resolveId(idOrName)] = vis;
+  }
+
+  public setRequired(idOrName: string, required: boolean) {
+    const id = this.resolveId(idOrName);
+    // Marca a exigência no próprio schema quando possível
+    const field = this.findField(id);
+    if (field) field.required = required;
+    this.required = { ...(this.required || {}), [id]: required };
+  }
+
+  public apply() {
+    this.onStateChange({
+      values: { ...this.values },
+      visibility: { ...this.visibility },
+      disabled: { ...this.disabled },
+      labels: { ...this.labels },
+      required: { ...(this.required || {}) },
+    });
+    return Promise.resolve();
+  }
+
+  public getGridFields(gridId: string): FormField[] {
+    const all = this.schema.steps.flatMap(s => s.fields);
+    return all.filter(f => f.meta?.gridId === gridId);
+  }
+
+  private findField(id: string): FormField | null {
+    const walk = (fields: FormField[]): FormField | null => {
+      for (const f of fields) {
+        if (f.id === id) return f;
+        if (f.children) {
+          const found = walk(f.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    for (const step of this.schema.steps) {
+      const found = walk(step.fields);
+      if (found) return found;
+    }
+    return null;
   }
 }

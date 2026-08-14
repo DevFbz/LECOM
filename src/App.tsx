@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import type { RootState } from './store';
 import { cn } from './utils/lib';
+import { importSchemaFile, exportSchemaToAtos } from './utils/atos';
 import { 
   setSelectedFieldId, 
   setSelectedGroupId,
@@ -96,36 +97,32 @@ function App() {
     localStorage.setItem('lecom_preview_schema', JSON.stringify(schema));
   }, [schema]);
 
-  const handleExportSchema = () => {
-    const jsonString = JSON.stringify(schema, null, 2);
-    const blob = new Blob([jsonString], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `form-schema-${new Date().getTime()}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleExportSchema = async () => {
+    try {
+      const blob = await exportSchemaToAtos(schema);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `modelo-${schema.id}-${new Date().getTime()}.atos`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Erro ao exportar .atos:', error);
+      alert('Erro ao gerar o arquivo .atos.');
+    }
   };
 
-  const handleImportSchema = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportSchema = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const content = e.target?.result as string;
-          const parsedSchema = JSON.parse(content);
-          if (parsedSchema && parsedSchema.steps) {
-            dispatch(setSchema(parsedSchema));
-          } else {
-            alert("O arquivo selecionado não contém um formato válido de formulário.");
-          }
-        } catch (error) {
-          alert("Erro ao importar arquivo. Certifique-se de que é um JSON válido.");
-        }
-      };
-      reader.readAsText(file);
+      try {
+        const parsedSchema = await importSchemaFile(file);
+        dispatch(setSchema(parsedSchema));
+      } catch (error) {
+        alert("Erro ao importar arquivo. Certifique-se de que é um .atos ou JSON válido.");
+      }
     }
     if (event.target) event.target.value = ''; // Reset input
   };
@@ -186,7 +183,7 @@ function App() {
            )}
            <input 
               type="file" 
-              accept=".json" 
+              accept=".atos,.json,.zip" 
               ref={fileInputRef} 
               style={{ display: 'none' }} 
               onChange={handleImportSchema} 
@@ -201,7 +198,7 @@ function App() {
              onClick={handleExportSchema}
              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0056b3] hover:bg-[#004494] text-white text-[10px] font-bold uppercase tracking-wider rounded transition-colors"
            >
-             <Download size={12} /> Exportar
+             <Download size={12} /> Exportar .atos
            </button>
         </div>
       </nav>
